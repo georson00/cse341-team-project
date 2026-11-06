@@ -82,7 +82,7 @@ If you want to contribute improvements to the documentation or educational conte
 
 1. **Fork** this repository (not "Use this template")
 2. Create a feature branch for your changes
-3. Submit a pull request with your improvements
+3. Submit a pull request with a concise summary of your changes and the tests you ran (or note that tests do not apply to documentation-only changes)
 
 Forking maintains the connection to the original repository and allows you to contribute back. Using the template creates an independent copy for your own work.
 
