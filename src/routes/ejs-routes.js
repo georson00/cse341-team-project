@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { homePage, aboutPage, testErrorPage } from './index.js';
 import { trainsPage } from '../controllers/trains.js';
+import { tripsListPage, tripDetailsPage } from '../controllers/trips.js';
 import railTripsRouter from './trips.js';
 
 /**
@@ -27,6 +28,13 @@ router.get('/500', testErrorPage);
 /* =========================================================================
  * Feature Set 1: Trips (trip list and trip details pages)
  * ========================================================================= */
+
+// Trip list page (content is loaded client-side from /api/trips)
+router.get('/trips', tripsListPage);
+
+// Trip details page. Only matches one path segment, so it does not catch
+// the legacy /trips/booking/... and /trips/confirmation/... routes.
+router.get('/trips/:tripId', tripDetailsPage);
 
 /* =========================================================================
  * Feature Set 3: Bookings (booking page, confirmation, /bookings-admin)
