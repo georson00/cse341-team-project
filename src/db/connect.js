@@ -1,8 +1,18 @@
 import { MongoClient } from 'mongodb';
+import mongoose from 'mongoose';
 
 let database;
 let client;
 
+/**
+ * Connects to MongoDB using both the native driver and Mongoose.
+ *
+ * - Mongoose is used by the new models in src/models (see models/trains.js).
+ * - The native driver (getDb) is kept so existing code keeps working until
+ *   each feature set migrates its queries to Mongoose models.
+ *
+ * Both connections point at the same database.
+ */
 const connectToDb = async (options = {}) => {
   if (database) {
     return database;
@@ -18,6 +28,9 @@ const connectToDb = async (options = {}) => {
   client = new MongoClient(connectionString);
   await client.connect();
   database = client.db(databaseName);
+
+  await mongoose.connect(connectionString, { dbName: databaseName });
+
   return database;
 };
 
@@ -29,6 +42,8 @@ const getDb = () => {
 };
 
 const closeDb = async () => {
+  await mongoose.disconnect();
+
   if (client) {
     await client.close();
     client = undefined;
