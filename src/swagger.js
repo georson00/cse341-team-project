@@ -9,14 +9,25 @@ const __dirname = Path.dirname(fileURLToPath(import.meta.url));
  * The interactive docs are served at /api-docs (see app.js).
  */
 const swaggerSpec = swaggerJsdoc({
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'Kizuna Rail API',
-      version: '1.0.0',
-      description: 'JSON API for the Kizuna Rail scenic railway booking site.'
-    }
+definition: {
+  openapi: '3.0.0',
+  info: {
+    title: 'Kizuna Rail API',
+    version: '1.0.0',
+    description: 'JSON API for the Kizuna Rail scenic railway booking site.'
   },
+  components: {
+    securitySchemes: {
+      AdminApiKey: {
+        type: 'apiKey',
+        in: 'header',
+        name: 'x-admin-api-key',
+        description: 'Admin API key required to access booking records.'
+      }
+    }
+  }
+},
+
   apis: [Path.join(__dirname, 'routes', 'api-routes.js')]
 });
 
