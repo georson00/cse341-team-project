@@ -23,9 +23,9 @@ const initializeDatabase = async (db) => {
     await collection.insertMany(documents);
   }
 
-  const confirmations = db.collection('confirmations');
-  await confirmations.deleteMany({});
-  await confirmations.createIndex({ id: 1 }, { unique: true });
+// Preserve existing bookings when initializing the database.
+const bookings = db.collection('bookings');
+await bookings.createIndex({ id: 1 }, { unique: true });
 };
 
 export { initializeDatabase, starterCollections };

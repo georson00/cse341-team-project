@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getAllTrains, getTrainById } from '../controllers/trains.js';
-
+import { getAllBookingsHandler } from '../controllers/bookings.js';
+import { requireBookingAdmin } from '../middleware/requireBookingAdmin.js';
 /**
  * Routes that expose JSON API endpoints.
  *
@@ -74,6 +75,39 @@ router.get('/api/trains/:id', getTrainById);
  * Feature Set 3: Bookings
  * /api/bookings
  * ========================================================================= */
+
+/**
+ * @openapi
+ * /api/bookings:
+ *   get:
+ *     summary: Retrieve all bookings
+ *     description: Returns booking records for authorized administrators.
+ *     tags: [Bookings]
+ *     security:
+ *       - AdminApiKey: []
+ *     responses:
+ *       200:
+ *         description: Bookings retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 bookings:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *       401:
+ *         description: Admin API key is missing.
+ *       403:
+ *         description: Admin API key is invalid.
+ *       500:
+ *         description: Server error while retrieving bookings.
+ *       503:
+ *         description: Admin API access is not configured.
+ */
+router.get('/api/bookings', requireBookingAdmin, getAllBookingsHandler);
+
 
 /* =========================================================================
  * Feature Set 4: Ticket Classes
