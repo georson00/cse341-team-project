@@ -1,4 +1,6 @@
 import express from 'express';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import Path from 'path';
 import { fileURLToPath } from 'url';
 import pkg from './package.json' with { type: 'json' };
@@ -28,6 +30,44 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use(globalMiddleware);
+
+
+const isTest = process.env.NODE_ENV === 'test';
+
+const sessionSecret = isTest
+    ? 'kizuna-test-session-secret-not-for-production'
+    : process.env.SESSION_SECRET;
+
+const mongoUri = process.env.MONGODB_URI;
+
+if (!sessionSecret || (!isTest && !mongoUri)) {
+    throw new Error('Session configuration is missing');
+}
+
+const sessionStore = isTest
+    ? new session.MemoryStore()
+    : MongoStore.create({
+        mongoUrl: mongoUri,
+        dbName: process.env.MONGODB_DB_NAME,
+        collectionName: 'sessions'
+    });
+
+app.set('trust proxy', 1);
+
+app.use(session({
+    name: 'kizuna.sid',
+    secret: sessionSecret,
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,
+    cookie: {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 60 * 60 * 1000
+    }
+}));
+
 
 // Interactive API documentation generated from the @openapi comments.
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
