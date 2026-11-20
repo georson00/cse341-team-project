@@ -16,6 +16,16 @@ import {
 } from '../controllers/adminAuth.js';
 
 import { requireAdminPage } from '../middleware/requireAdminPage.js';
+import {
+    registerPage,
+    register,
+    loginPage,
+    login,
+    logout,
+    adminDashboardPage
+} from '../controllers/auth.js';
+import { requirePageRole } from '../middleware/auth.js';
+import { ROLE_NAMES } from '../models/schemas/roles.js';
 
 /**
  * Routes that render EJS pages.
@@ -37,6 +47,22 @@ router.get('/trains', trainsPage);
 
 // Test 500 error page
 router.get('/500', testErrorPage);
+
+/* =========================================================================
+ * W04 Feature Set 1: Core Authentication
+ * ========================================================================= */
+
+// Register and sign in
+router.get('/register', registerPage);
+router.post('/register', register);
+router.get('/login', loginPage);
+router.post('/login', login);
+
+// Sign out (POST so a link or image cannot sign someone out)
+router.post('/logout', logout);
+
+// Admin Dashboard: signed out -> /login, signed in without admin role -> 403
+router.get('/admin/dashboard', requirePageRole(ROLE_NAMES.ADMIN), adminDashboardPage);
 
 /* =========================================================================
  * Feature Set 1: Trips (trip list and trip details pages)

@@ -5,6 +5,7 @@ import Path from 'path';
 import { fileURLToPath } from 'url';
 import pkg from './package.json' with { type: 'json' };
 import globalMiddleware from './src/middleware/global.js';
+import { loadSessionUser } from './src/middleware/auth.js';
 import routes from './src/routes/router.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './src/swagger.js';
@@ -59,6 +60,8 @@ app.use(session({
     secret: sessionSecret,
     resave: false,
     saveUninitialized: false,
+    // Reset the 1-hour expiry on every response (1 hour of inactivity).
+    rolling: true,
     store: sessionStore,
     cookie: {
         httpOnly: true,
@@ -68,6 +71,9 @@ app.use(session({
     }
 }));
 
+// Copy the signed-in user (or null) to req.user and res.locals.user.
+// Must run after the session middleware and before any routes.
+app.use(loadSessionUser);
 
 // Interactive API documentation generated from the @openapi comments.
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
