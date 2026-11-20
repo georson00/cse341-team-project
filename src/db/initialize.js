@@ -12,6 +12,9 @@ const starterCollections = [
   ['trains', trains]
 ];
 
+// Roles used by authentication (see src/models/schemas/roles.js).
+const standardRoles = ['customer', 'admin'];
+
 const initializeDatabase = async (db) => {
   if (!db) {
     throw new Error('A database connection is required to initialize data.');
@@ -26,6 +29,30 @@ const initializeDatabase = async (db) => {
 // Preserve existing bookings when initializing the database.
 const bookings = db.collection('bookings');
 await bookings.createIndex({ id: 1 }, { unique: true });
+
+  await seedRoles(db);
+
+  // Users are preserved too; only make sure the unique indexes exist.
+  const users = db.collection('users');
+  await users.createIndex({ email: 1 }, { unique: true });
+  await users.createIndex({ username: 1 }, { unique: true });
 };
 
-export { initializeDatabase, starterCollections };
+/**
+ * Adds the standard roles without touching existing ones, so running
+ * `npm run db:import` again never breaks the role references of existing users.
+ */
+const seedRoles = async (db) => {
+  const roles = db.collection('roles');
+  await roles.createIndex({ name: 1 }, { unique: true });
+
+  for (const name of standardRoles) {
+    await roles.updateOne(
+      { name },
+      { $setOnInsert: { name } },
+      { upsert: true }
+    );
+  }
+};
+
+export { initializeDatabase, starterCollections, standardRoles };
