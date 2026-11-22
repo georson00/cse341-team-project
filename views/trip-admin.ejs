@@ -1,0 +1,40 @@
+<h1>Trip Management</h1>
+<p id="trip-admin-status" role="status"></p>
+<div id="trips-container"></div>
+
+<template id="trip-item-template">
+  <article class="trip-item" data-trip-id="">
+    <h2 class="trip-title"></h2>
+    <p class="trip-station"></p>
+    <p class="trip-schedule"></p>
+    <button type="button" data-action="edit">Edit</button>
+    <button type="button" data-action="delete">Delete</button>
+  </article>
+</template>
+
+<template id="trip-edit-template">
+  <form class="trip-edit-form" data-trip-id="">
+    <label>
+      Station
+      <select name="station">
+        <option value="">-- Keep Current Station --</option>
+        <% (stations || []).forEach((st) => { %>
+          <option value="<%= st._id %>"><%= st.name || st.title || st._id %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label>
+      Schedule
+      <select name="schedule">
+        <option value="">-- Keep Current Schedule --</option>
+        <% (schedules || []).forEach((sc) => { %>
+          <option value="<%= sc._id %>"><%= sc.label || sc.name || sc.departureTime || sc._id %></option>
+        <% }) %>
+      </select>
+    </label>
+    <button type="submit">Save Changes</button>
+    <button type="button" data-action="cancel">Cancel</button>
+  </form>
+</template>
+
+<script type="module" src="/js/trip-admin.js"></script>
