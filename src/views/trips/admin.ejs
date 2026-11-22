@@ -12,12 +12,12 @@
     <p id="trip-admin-status" role="status"></p>
 
     <form id="create-trip-form">
-      <label>Title <input type="text" name="title" required /></label>
-      <label>Origin Station <input type="text" name="originStation" /></label>
-      <label>Destination Station <input type="text" name="destinationStation" /></label>
-      <label>Duration (min) <input type="number" name="durationMinutes" min="1" /></label>
+      <label>Name <input type="text" name="name" required /></label>
+      <label>Start Station <input type="text" name="startStation" /></label>
+      <label>End Station <input type="text" name="endStation" /></label>
+      <label>Duration (e.g. 4.5 hours) <input type="text" name="duration" /></label>
       <label>Description <input type="text" name="description" /></label>
-      <label>Highlights (comma-separated) <input type="text" name="scenicHighlights" /></label>
+      <label>Highlights (comma-separated) <input type="text" name="highlights" /></label>
       <button type="submit">Create Trip</button>
     </form>
 
@@ -37,12 +37,12 @@
 
     <template id="trip-edit-template">
       <form class="trip-edit-form" data-trip-id="">
-        <label>Title <input type="text" name="title" required /></label>
-        <label>Origin Station <input type="text" name="originStation" /></label>
-        <label>Destination Station <input type="text" name="destinationStation" /></label>
-        <label>Duration (min) <input type="number" name="durationMinutes" min="1" /></label>
+        <label>Name <input type="text" name="name" required /></label>
+        <label>Start Station <input type="text" name="startStation" /></label>
+        <label>End Station <input type="text" name="endStation" /></label>
+        <label>Duration (e.g. 4.5 hours) <input type="text" name="duration" /></label>
         <label>Description <input type="text" name="description" /></label>
-        <label>Highlights (comma-separated) <input type="text" name="scenicHighlights" /></label>
+        <label>Highlights (comma-separated) <input type="text" name="highlights" /></label>
         <button type="submit">Save</button>
         <button type="button" data-action="cancel">Cancel</button>
       </form>

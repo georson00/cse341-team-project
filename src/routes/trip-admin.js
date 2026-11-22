@@ -12,7 +12,7 @@ export const tripAdminEjsRouter = Router();
 tripAdminEjsRouter.get('/admin/trips', requirePageRole('admin'), renderTripAdminPage);
 
 export const tripAdminApiRouter = Router();
-tripAdminApiRouter.get('/trips', requireApiRole('admin'), listTripsAdmin);
-tripAdminApiRouter.post('/trips', requireApiRole('admin'), createTripAdmin);
-tripAdminApiRouter.put('/trips/:id', requireApiRole('admin'), updateTripAdmin);
-tripAdminApiRouter.delete('/trips/:id', requireApiRole('admin'), deleteTripAdmin);
+tripAdminApiRouter.get('/api/trips', requireApiRole('admin'), listTripsAdmin);
+tripAdminApiRouter.post('/api/trips', requireApiRole('admin'), createTripAdmin);
+tripAdminApiRouter.put('/api/trips/:id', requireApiRole('admin'), updateTripAdmin);
+tripAdminApiRouter.delete('/api/trips/:id', requireApiRole('admin'), deleteTripAdmin);

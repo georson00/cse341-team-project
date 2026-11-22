@@ -1,5 +1,35 @@
 import mongoose from 'mongoose';
-import { Trip } from '../models/schemas/trips.js';
+import Trip from '../models/trip.js';
+
+function slugify(text) {
+  const slug = text
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+  return slug || `trip-${Date.now()}`;
+}
+
+async function uniqueTripId(name) {
+  const base = slugify(name);
+  let candidate = base;
+  let n = 2;
+  while (await Trip.exists({ id: candidate })) {
+    candidate = `${base}-${n}`;
+    n += 1;
+  }
+  return candidate;
+}
+
+function toHighlights(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item).trim()).filter(Boolean);
+  }
+  if (typeof value === 'string') {
+    return value.split(',').map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
 
 export function renderTripAdminPage(req, res) {
   return res.status(200).render('trips/admin', {
@@ -9,7 +39,7 @@ export function renderTripAdminPage(req, res) {
 
 export async function listTripsAdmin(req, res) {
   try {
-    const trips = await Trip.find({}).sort({ title: 1 }).lean();
+    const trips = await Trip.find({}).sort({ name: 1 }).lean();
     return res.status(200).json(trips);
   } catch (err) {
     console.error('Error listing trips for admin:', err);
@@ -19,24 +49,19 @@ export async function listTripsAdmin(req, res) {
 
 export async function createTripAdmin(req, res) {
   try {
-    const title = typeof req.body.title === 'string' ? req.body.title.trim() : '';
-    if (!title) {
-      return res.status(400).json({ message: 'Trip title is required' });
+    const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';
+    if (!name) {
+      return res.status(400).json({ message: 'Trip name is required' });
     }
 
     const payload = {
-      title,
+      id: await uniqueTripId(name),
+      name,
       description: typeof req.body.description === 'string' ? req.body.description.trim() : '',
-      originStation: typeof req.body.originStation === 'string' ? req.body.originStation.trim() : '',
-      destinationStation: typeof req.body.destinationStation === 'string' ? req.body.destinationStation.trim() : '',
-      durationMinutes: req.body.durationMinutes !== undefined && req.body.durationMinutes !== ''
-        ? Number(req.body.durationMinutes)
-        : undefined,
-      scenicHighlights: Array.isArray(req.body.scenicHighlights)
-        ? req.body.scenicHighlights.map((item) => String(item).trim()).filter(Boolean)
-        : typeof req.body.scenicHighlights === 'string'
-          ? req.body.scenicHighlights.split(',').map((item) => item.trim()).filter(Boolean)
-          : [],
+      startStation: typeof req.body.startStation === 'string' ? req.body.startStation.trim() : '',
+      endStation: typeof req.body.endStation === 'string' ? req.body.endStation.trim() : '',
+      duration: typeof req.body.duration === 'string' ? req.body.duration.trim() : '',
+      highlights: toHighlights(req.body.highlights),
     };
 
     const created = await Trip.create(payload);
@@ -58,33 +83,27 @@ export async function updateTripAdmin(req, res) {
     }
 
     const updates = {};
-    if (typeof req.body.title === 'string') {
-      const trimmed = req.body.title.trim();
+    if (typeof req.body.name === 'string') {
+      const trimmed = req.body.name.trim();
       if (!trimmed) {
-        return res.status(400).json({ message: 'Trip title cannot be empty' });
+        return res.status(400).json({ message: 'Trip name cannot be empty' });
       }
-      updates.title = trimmed;
+      updates.name = trimmed;
     }
     if (typeof req.body.description === 'string') {
       updates.description = req.body.description.trim();
     }
-    if (typeof req.body.originStation === 'string') {
-      updates.originStation = req.body.originStation.trim();
+    if (typeof req.body.startStation === 'string') {
+      updates.startStation = req.body.startStation.trim();
     }
-    if (typeof req.body.destinationStation === 'string') {
-      updates.destinationStation = req.body.destinationStation.trim();
+    if (typeof req.body.endStation === 'string') {
+      updates.endStation = req.body.endStation.trim();
     }
-    if (req.body.durationMinutes !== undefined && req.body.durationMinutes !== '') {
-      const mins = Number(req.body.durationMinutes);
-      if (Number.isNaN(mins) || mins < 1) {
-        return res.status(400).json({ message: 'durationMinutes must be at least 1' });
-      }
-      updates.durationMinutes = mins;
+    if (typeof req.body.duration === 'string') {
+      updates.duration = req.body.duration.trim();
     }
-    if (req.body.scenicHighlights !== undefined) {
-      updates.scenicHighlights = Array.isArray(req.body.scenicHighlights)
-        ? req.body.scenicHighlights.map((item) => String(item).trim()).filter(Boolean)
-        : String(req.body.scenicHighlights).split(',').map((item) => item.trim()).filter(Boolean);
+    if (req.body.highlights !== undefined) {
+      updates.highlights = toHighlights(req.body.highlights);
     }
 
     if (Object.keys(updates).length === 0) {
