@@ -6,11 +6,31 @@ import globalMiddleware from './src/middleware/global.js';
 import routes from './src/routes/router.js';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './src/swagger.js';
-
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = Path.dirname(__filename);
 
 const app = express();
+
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        dbName: process.env.MONGODB_DB_NAME,
+        collectionName: 'sessions'
+    }),
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+    }
+}));
 
 // Add version info to res.locals for access in templates.
 app.use((req, res, next) => {
