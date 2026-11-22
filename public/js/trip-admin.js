@@ -1,21 +1,10 @@
 const container = document.querySelector('#trips-container');
 const statusEl = document.querySelector('#trip-admin-status');
+const createForm = document.querySelector('#create-trip-form');
 const itemTpl = document.querySelector('#trip-item-template');
 const editTpl = document.querySelector('#trip-edit-template');
 
 let tripsById = new Map();
-
-function formatStation(trip) {
-  const st = trip.station || trip.originStation;
-  if (!st) return 'Station: Unassigned';
-  return `Station: ${typeof st === 'object' ? (st.name || st.title || st._id) : st}`;
-}
-
-function formatSchedule(trip) {
-  const sc = trip.schedule;
-  if (!sc) return 'Schedule: Unassigned';
-  return `Schedule: ${typeof sc === 'object' ? (sc.label || sc.name || sc.departureTime || sc._id) : sc}`;
-}
 
 function renderTrips() {
   const fragment = document.createDocumentFragment();
@@ -24,13 +13,37 @@ function renderTrips() {
     const clone = itemTpl.content.cloneNode(true);
     const article = clone.querySelector('.trip-item');
     article.dataset.tripId = trip._id;
-    article.querySelector('.trip-title').textContent = trip.name || trip.code || `Trip ${trip._id}`;
-    article.querySelector('.trip-station').textContent = formatStation(trip);
-    article.querySelector('.trip-schedule').textContent = formatSchedule(trip);
+    article.querySelector('.trip-title').textContent = trip.title || 'Untitled Trip';
+
+    const routeParts = [trip.originStation, trip.destinationStation].filter(Boolean);
+    article.querySelector('.trip-route').textContent = routeParts.length
+      ? `Route: ${routeParts.join(' -> ')}`
+      : 'Route: Not specified';
+
+    article.querySelector('.trip-duration').textContent = trip.durationMinutes
+      ? `Duration: ${trip.durationMinutes} min`
+      : 'Duration: N/A';
+
+    article.querySelector('.trip-description').textContent = trip.description || '';
+
+    const highlights = Array.isArray(trip.scenicHighlights) ? trip.scenicHighlights : [];
+    article.querySelector('.trip-highlights').textContent = highlights.length
+      ? `Highlights: ${highlights.join(', ')}`
+      : '';
+
     fragment.append(clone);
   }
 
   container.replaceChildren(fragment);
+}
+
+async function parseErrorMessage(response, fallback) {
+  try {
+    const data = await response.json();
+    return data?.message || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 async function loadTrips() {
@@ -45,7 +58,7 @@ async function loadTrips() {
       return;
     }
     if (!res.ok) {
-      statusEl.textContent = 'Failed to load trips.';
+      statusEl.textContent = await parseErrorMessage(res, 'Failed to load trips.');
       return;
     }
 
@@ -57,7 +70,34 @@ async function loadTrips() {
   }
 }
 
-container.addEventListener('click', async (event) => {
+createForm?.addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const formData = new FormData(createForm);
+  const payload = Object.fromEntries(formData.entries());
+
+  try {
+    const res = await fetch('/api/trips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      statusEl.textContent = await parseErrorMessage(res, 'Failed to create trip.');
+      return;
+    }
+
+    const created = await res.json();
+    tripsById.set(created._id, created);
+    renderTrips();
+    createForm.reset();
+    statusEl.textContent = 'Trip created.';
+  } catch {
+    statusEl.textContent = 'Network error creating trip.';
+  }
+});
+
+container?.addEventListener('click', async (event) => {
   const actionBtn = event.target.closest('button[data-action]');
   if (!actionBtn) return;
 
@@ -71,20 +111,18 @@ container.addEventListener('click', async (event) => {
     const form = editClone.querySelector('form');
     form.dataset.tripId = tripId;
 
-    const currentStationId = typeof trip.station === 'object' ? trip.station?._id : trip.station;
-    const currentScheduleId = typeof trip.schedule === 'object' ? trip.schedule?._id : trip.schedule;
-    if (currentStationId && form.elements.station) {
-      form.elements.station.value = currentStationId;
-    }
-    if (currentScheduleId && form.elements.schedule) {
-      form.elements.schedule.value = currentScheduleId;
-    }
+    form.elements.title.value = trip.title || '';
+    form.elements.originStation.value = trip.originStation || '';
+    form.elements.destinationStation.value = trip.destinationStation || '';
+    form.elements.durationMinutes.value = trip.durationMinutes || '';
+    form.elements.description.value = trip.description || '';
+    form.elements.scenicHighlights.value = Array.isArray(trip.scenicHighlights)
+      ? trip.scenicHighlights.join(', ')
+      : '';
 
     form.addEventListener('submit', async (submitEvent) => {
       submitEvent.preventDefault();
-      const payload = {};
-      if (form.elements.station.value) payload.station = form.elements.station.value;
-      if (form.elements.schedule.value) payload.schedule = form.elements.schedule.value;
+      const payload = Object.fromEntries(new FormData(form).entries());
 
       try {
         const putRes = await fetch(`/api/trips/${encodeURIComponent(tripId)}`, {
@@ -94,14 +132,7 @@ container.addEventListener('click', async (event) => {
         });
 
         if (!putRes.ok) {
-          let errMessage = 'Failed to update trip.';
-          try {
-            const err = await putRes.json();
-            if (err?.message) errMessage = err.message;
-          } catch {
-            // Ignore non-JSON error body
-          }
-          statusEl.textContent = errMessage;
+          statusEl.textContent = await parseErrorMessage(putRes, 'Failed to update trip.');
           return;
         }
 
@@ -124,14 +155,7 @@ container.addEventListener('click', async (event) => {
       });
 
       if (!delRes.ok) {
-        let errMessage = 'Failed to delete trip.';
-        try {
-          const err = await delRes.json();
-          if (err?.message) errMessage = err.message;
-        } catch {
-          // Ignore non-JSON error body
-        }
-        statusEl.textContent = errMessage;
+        statusEl.textContent = await parseErrorMessage(delRes, 'Failed to delete trip.');
         return;
       }
 

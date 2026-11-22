@@ -8,7 +8,11 @@ import { getAllTrains, getTrainById } from '../controllers/trains.js';
  * Swagger docs at /api-docs. Add your routes inside your feature set's
  * section below to avoid merge conflicts with teammates.
  */
+import { tripAdminApiRouter } from './trip-admin.js';
+
 const router = Router();
+
+router.use(tripAdminApiRouter);
 
 /* =========================================================================
  * Trains (example)

@@ -10,7 +10,11 @@ import railTripsRouter from './trips.js';
  * list.js, details.js, book.js, confirm.js). Feature Sets 1 and 3 move those
  * into controllers and register the routes in their sections below.
  */
+import { tripAdminEjsRouter } from './trip-admin.js';
+
 const router = Router();
+
+router.use(tripAdminEjsRouter);
 
 // Home page
 router.get('/', homePage);

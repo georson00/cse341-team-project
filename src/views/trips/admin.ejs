@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title><%= title %></title>
+</head>
+<body>
+  <%- include('../partials/header') %>
+  <main>
+    <h1>Trip Administration</h1>
+    <p id="trip-admin-status" role="status"></p>
+
+    <form id="create-trip-form">
+      <label>Title <input type="text" name="title" required /></label>
+      <label>Origin Station <input type="text" name="originStation" /></label>
+      <label>Destination Station <input type="text" name="destinationStation" /></label>
+      <label>Duration (min) <input type="number" name="durationMinutes" min="1" /></label>
+      <label>Description <input type="text" name="description" /></label>
+      <label>Highlights (comma-separated) <input type="text" name="scenicHighlights" /></label>
+      <button type="submit">Create Trip</button>
+    </form>
+
+    <div id="trips-container"></div>
+
+    <template id="trip-item-template">
+      <article class="trip-item" data-trip-id="">
+        <h2 class="trip-title"></h2>
+        <p class="trip-route"></p>
+        <p class="trip-duration"></p>
+        <p class="trip-description"></p>
+        <p class="trip-highlights"></p>
+        <button type="button" data-action="edit">Edit</button>
+        <button type="button" data-action="delete">Delete</button>
+      </article>
+    </template>
+
+    <template id="trip-edit-template">
+      <form class="trip-edit-form" data-trip-id="">
+        <label>Title <input type="text" name="title" required /></label>
+        <label>Origin Station <input type="text" name="originStation" /></label>
+        <label>Destination Station <input type="text" name="destinationStation" /></label>
+        <label>Duration (min) <input type="number" name="durationMinutes" min="1" /></label>
+        <label>Description <input type="text" name="description" /></label>
+        <label>Highlights (comma-separated) <input type="text" name="scenicHighlights" /></label>
+        <button type="submit">Save</button>
+        <button type="button" data-action="cancel">Cancel</button>
+      </form>
+    </template>
+  </main>
+  <%- include('../partials/footer') %>
+  <script type="module" src="/js/trip-admin.js"></script>
+</body>
+</html>
