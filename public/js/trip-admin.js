@@ -13,20 +13,20 @@ function renderTrips() {
     const clone = itemTpl.content.cloneNode(true);
     const article = clone.querySelector('.trip-item');
     article.dataset.tripId = trip._id;
-    article.querySelector('.trip-title').textContent = trip.title || 'Untitled Trip';
+    article.querySelector('.trip-title').textContent = trip.name || 'Untitled Trip';
 
-    const routeParts = [trip.originStation, trip.destinationStation].filter(Boolean);
+    const routeParts = [trip.startStation, trip.endStation].filter(Boolean);
     article.querySelector('.trip-route').textContent = routeParts.length
       ? `Route: ${routeParts.join(' -> ')}`
       : 'Route: Not specified';
 
-    article.querySelector('.trip-duration').textContent = trip.durationMinutes
-      ? `Duration: ${trip.durationMinutes} min`
+    article.querySelector('.trip-duration').textContent = trip.duration
+      ? `Duration: ${trip.duration}`
       : 'Duration: N/A';
 
     article.querySelector('.trip-description').textContent = trip.description || '';
 
-    const highlights = Array.isArray(trip.scenicHighlights) ? trip.scenicHighlights : [];
+    const highlights = Array.isArray(trip.highlights) ? trip.highlights : [];
     article.querySelector('.trip-highlights').textContent = highlights.length
       ? `Highlights: ${highlights.join(', ')}`
       : '';
@@ -111,13 +111,13 @@ container?.addEventListener('click', async (event) => {
     const form = editClone.querySelector('form');
     form.dataset.tripId = tripId;
 
-    form.elements.title.value = trip.title || '';
-    form.elements.originStation.value = trip.originStation || '';
-    form.elements.destinationStation.value = trip.destinationStation || '';
-    form.elements.durationMinutes.value = trip.durationMinutes || '';
+    form.elements.name.value = trip.name || '';
+    form.elements.startStation.value = trip.startStation || '';
+    form.elements.endStation.value = trip.endStation || '';
+    form.elements.duration.value = trip.duration || '';
     form.elements.description.value = trip.description || '';
-    form.elements.scenicHighlights.value = Array.isArray(trip.scenicHighlights)
-      ? trip.scenicHighlights.join(', ')
+    form.elements.highlights.value = Array.isArray(trip.highlights)
+      ? trip.highlights.join(', ')
       : '';
 
     form.addEventListener('submit', async (submitEvent) => {
