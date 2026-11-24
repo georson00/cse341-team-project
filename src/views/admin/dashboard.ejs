@@ -1,0 +1,12 @@
+<%- include('../partials/header') %>
+<article class="auth-page admin-dashboard">
+    <h1>Welcome to the Admin Dashboard</h1>
+    <p>Signed in as <strong><%= user.displayName %></strong> (<%= user.role %>).</p>
+
+    <%# Feature Sets 3-5 add links to the user, booking and trip admin pages here. %>
+
+    <form action="/logout" method="POST">
+        <button type="submit">Sign Out</button>
+    </form>
+</article>
+<%- include('../partials/footer') %>

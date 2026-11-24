@@ -1,0 +1,26 @@
+<%- include('../partials/header') %>
+<article class="auth-page">
+    <h1>Sign In</h1>
+
+    <% if (registered) { %>
+        <p class="auth-success" role="status">Your account was created. Please sign in.</p>
+    <% } %>
+
+    <% if (error) { %>
+        <p class="auth-errors" role="alert"><%= error %></p>
+    <% } %>
+
+    <form class="auth-form" action="/login" method="POST">
+        <label for="login">Email or username</label>
+        <input type="text" id="login" name="login" required autocomplete="username"
+            value="<%= login %>">
+
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+
+        <button type="submit">Sign In</button>
+    </form>
+
+    <p>New to Kizuna Rail? <a href="/register">Create an account</a></p>
+</article>
+<%- include('../partials/footer') %>
