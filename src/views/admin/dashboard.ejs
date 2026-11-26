@@ -4,7 +4,14 @@
     <p>Signed in as <strong><%= user.displayName %></strong> (<%= user.role %>).</p>
 
     <%# Feature Sets 3-5 add links to the user, booking and trip admin pages here. %>
-
+    <section class="admin-navigation">
+    <h2>Management</h2>
+    <ul>
+        <li>
+            <a href="/bookings-admin">Manage Bookings</a>
+        </li>
+    </ul>
+</section>
     <form action="/logout" method="POST">
         <button type="submit">Sign Out</button>
     </form>
