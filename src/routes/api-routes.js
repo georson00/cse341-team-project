@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import { getAllTrains, getTrainById } from '../controllers/trains.js';
+import { getSchedulesForTrip, getSchedulesForTripAndMonth } from '../controllers/schedules.js';
+
 import { getAllBookingsHandler } from '../controllers/bookings.js';
 import { requireBookingAdmin } from '../middleware/requireBookingAdmin.js';
 import { getCurrentUser } from '../controllers/auth.js';
@@ -111,8 +113,41 @@ router.get('/api/auth/me', requireApiLogin, getCurrentUser);
 
 /* =========================================================================
  * Feature Set 2: Schedules
- * /api/trips/{id}/schedules, /api/trips/{id}/schedules?month={month}
  * ========================================================================= */
+
+/**
+ * @openapi
+ * /api/trips/{id}/schedules:
+ *   get:
+ *     summary: Get schedules for a trip, optionally filtered by month
+ *     tags: [Schedules]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: query
+ *         name: month
+ *         required: false
+ *         schema:
+ *           type: integer
+ *           minimum: 1
+ *           maximum: 12
+ *     responses:
+ *       200:
+ *         description: Schedules for the requested trip.
+ *       400:
+ *         description: Invalid month.
+ *       500:
+ *         description: Server error.
+ */
+router.get('/api/trips/:id/schedules', (req, res, next) => {
+  if (req.query.month !== undefined) {
+    return getSchedulesForTripAndMonth(req, res, next);
+  }
+  return getSchedulesForTrip(req, res, next);
+});
 
 /* =========================================================================
  * Feature Set 3: Bookings
