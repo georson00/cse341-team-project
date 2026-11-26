@@ -1,28 +1,84 @@
 import { describe, expect, test } from 'vitest';
 import request from 'supertest';
 import app from '../app.js';
-import { createBooking } from '../src/models/bookings.js';
+import { getDb } from '../src/db/connect.js';
+import {
+    createBooking,
+    getBookingById
+} from '../src/models/bookings.js';
 
+// Test account credentials.
+const customer = {
+    displayName: 'Jane Smith',
+    username: 'janesmith',
+    email: 'jane@example.com',
+    password: 'correct-horse-42',
+    confirmPassword: 'correct-horse-42'
+};
 
-describe('GET /api/bookings', () => {
-    test('rejects requests without admin authentication', async () => {
-        const response = await request(app).get('/api/bookings');
+const admin = {
+    displayName: 'Admin User',
+    username: 'bookingadmin',
+    email: 'admin@example.com',
+    password: 'correct-horse-42',
+    confirmPassword: 'correct-horse-42'
+};
 
-        expect(response.status).toBe(401);
-        expect(response.body).not.toHaveProperty('bookings');
-    });
-    test('rejects requests with an invalid admin API key', async () => {
-    const response = await request(app)
-        .get('/api/bookings')
-        .set('x-admin-api-key', 'incorrect-test-key');
+const otherCustomer = {
+    displayName: 'John Doe',
+    username: 'johndoe',
+    email: 'john@example.com',
+    password: 'correct-horse-42',
+    confirmPassword: 'correct-horse-42'
+};
 
-    expect(response.status).toBe(403);
-    expect(response.body).toEqual({
-        message: 'Invalid admin API key'
-    });
-    expect(response.body).not.toHaveProperty('bookings');
-});
-test('returns bookings when a valid admin API key is provided', async () => {
+// Register and authenticate a test user.
+const authenticate = async (user, isAdmin = false) => {
+    const agent = request.agent(app);
+
+    const registration = await agent
+        .post('/register')
+        .type('form')
+        .send(user);
+
+    expect(registration.status).toBe(302);
+    expect(registration.headers.location)
+        .toBe('/login?registered=1');
+
+    if (isAdmin) {
+        const db = getDb();
+
+        const adminRole = await db
+            .collection('roles')
+            .findOne({ name: 'admin' });
+
+        await db.collection('users').updateOne(
+            { email: user.email },
+            { $set: { role: adminRole._id } }
+        );
+    }
+
+    const login = await agent
+        .post('/login')
+        .type('form')
+        .send({
+            login: user.email,
+            password: user.password
+        });
+
+    expect(login.status).toBe(302);
+
+    const me = await agent.get('/api/auth/me');
+
+    expect(me.status).toBe(200);
+    expect(me.body.user.role)
+        .toBe(isAdmin ? 'admin' : 'customer');
+
+    return agent;
+};
+
+// Create predictable booking fixtures.
+const seedBookings = async () => {
     await createBooking({
         id: 'API-TEST-001',
         scheduleId: 1,
@@ -33,80 +89,400 @@ test('returns bookings when a valid admin API key is provided', async () => {
             {
                 firstName: 'Jane',
                 lastName: 'Smith',
-                email: 'jane@example.com',
+                email: customer.email,
                 phone: '5551234567'
             }
         ]
     });
 
-    const response = await request(app)
-        .get('/api/bookings')
-        .set('x-admin-api-key', 'kizuna-test-admin-key');
-
-    expect(response.status).toBe(200);
-    expect(response.headers['content-type']).toContain('application/json');
-
-    expect(response.body).toHaveProperty('bookings');
-    expect(response.body.bookings).toBeInstanceOf(Array);
-    expect(response.body.bookings).toHaveLength(1);
-
-    expect(response.body.bookings[0]).toMatchObject({
-        id: 'API-TEST-001',
+    await createBooking({
+        id: 'API-TEST-002',
         scheduleId: 1,
         tripId: 'test-trip',
         ticketClass: 'standard',
-        selectedDay: 'monday'
+        selectedDay: 'monday',
+        passengers: [
+            {
+                firstName: 'Alex',
+                lastName: 'Brown',
+                email: 'alex@example.com',
+                phone: '5559876543'
+            }
+        ]
+    });
+};
+
+
+/* =========================================
+ * Protected booking page
+ * ========================================= */
+
+describe('GET /bookings-admin', () => {
+    test('redirects unauthenticated visitors to login', async () => {
+        const response = await request(app)
+            .get('/bookings-admin');
+
+        expect(response.status).toBe(302);
+        expect(response.headers.location).toBe('/login');
     });
 
-    expect(response.body.bookings[0].passengers[0].firstName).toBe('Jane');
+    test('allows authenticated customers', async () => {
+        const agent = await authenticate(customer);
+
+        const response = await agent.get('/bookings-admin');
+
+        expect(response.status).toBe(200);
+        expect(response.text)
+            .toContain('Bookings Administration');
+    });
+
+    test('allows authenticated administrators', async () => {
+        const agent = await authenticate(admin, true);
+
+        const response = await agent.get('/bookings-admin');
+
+        expect(response.status).toBe(200);
+    });
+
+    test('includes a booking management link on the admin dashboard', async () => {
+        const agent = await authenticate(admin, true);
+
+        const response = await agent.get('/admin/dashboard');
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain('/bookings-admin');
+    });
 });
-test('allows an authenticated admin session to retrieve bookings', async () => {
-    const agent = request.agent(app);
 
-    const loginResponse = await agent
-        .post('/admin/login')
-        .type('form')
-        .send({
-            adminKey: 'kizuna-test-admin-key'
-        });
 
-    expect(loginResponse.status).toBe(302);
-    expect(loginResponse.headers.location).toBe('/bookings-admin');
+/* =========================================
+ * Retrieve bookings
+ * ========================================= */
 
-    const response = await agent.get('/api/bookings');
+describe('GET /api/bookings', () => {
+    test('rejects unauthenticated requests', async () => {
+        const response = await request(app)
+            .get('/api/bookings');
 
-    expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty('bookings');
-    expect(response.body.bookings).toBeInstanceOf(Array);
+        expect(response.status).toBe(401);
+        expect(response.body).not.toHaveProperty('bookings');
+    });
+
+    test('rejects legacy API key authentication', async () => {
+        const response = await request(app)
+            .get('/api/bookings')
+            .set('x-admin-api-key', 'kizuna-test-admin-key');
+
+        expect(response.status).toBe(401);
+    });
+
+    test('allows administrators to retrieve all bookings', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(admin, true);
+
+        const response = await agent.get('/api/bookings');
+
+        expect(response.status).toBe(200);
+        expect(response.body.bookings).toHaveLength(2);
+
+        expect(
+            response.body.bookings.map(booking => booking.id)
+        ).toEqual(expect.arrayContaining([
+            'API-TEST-001',
+            'API-TEST-002'
+        ]));
+    });
+
+    test('returns only bookings associated with the customer', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent.get('/api/bookings');
+
+        expect(response.status).toBe(200);
+        expect(response.body.bookings).toHaveLength(1);
+        expect(response.body.bookings[0].id)
+            .toBe('API-TEST-001');
+    });
+
+    test('returns an empty array for customers without bookings', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(otherCustomer);
+
+        const response = await agent.get('/api/bookings');
+
+        expect(response.status).toBe(200);
+        expect(response.body.bookings).toEqual([]);
+    });
+
+    test('revokes booking access after logout', async () => {
+        const agent = await authenticate(customer);
+
+        expect(
+            (await agent.get('/api/bookings')).status
+        ).toBe(200);
+
+        const logout = await agent.post('/logout');
+
+        expect(logout.status).toBe(302);
+        expect(logout.headers.location).toBe('/login');
+
+        expect(
+            (await agent.get('/api/bookings')).status
+        ).toBe(401);
+    });
 });
-test('revokes booking API access after admin logout', async () => {
-    const agent = request.agent(app);
 
-    // Log in as an administrator.
-    const loginResponse = await agent
-        .post('/admin/login')
-        .type('form')
-        .send({
-            adminKey: 'kizuna-test-admin-key'
-        });
 
-    expect(loginResponse.status).toBe(302);
+/* =========================================
+ * Update bookings
+ * ========================================= */
 
-    // Verify access before logout.
-    const beforeLogout = await agent.get('/api/bookings');
+describe('PATCH /api/bookings/:id', () => {
+    test('rejects unauthenticated requests', async () => {
+        await seedBookings();
 
-    expect(beforeLogout.status).toBe(200);
+        const response = await request(app)
+            .patch('/api/bookings/API-TEST-001')
+            .send({ ticketClass: 'premium' });
 
-    // Log out.
-    const logoutResponse = await agent.post('/admin/logout');
+        expect(response.status).toBe(401);
+    });
 
-    expect(logoutResponse.status).toBe(302);
-    expect(logoutResponse.headers.location).toBe('/admin/login');
+    test('allows administrators to update any booking', async () => {
+        await seedBookings();
 
-    // Attempt to access the API using the same agent.
-    const afterLogout = await agent.get('/api/bookings');
+        const agent = await authenticate(admin, true);
 
-    expect(afterLogout.status).toBe(401);
-    expect(afterLogout.body).not.toHaveProperty('bookings');
+        const response = await agent
+            .patch('/api/bookings/API-TEST-002')
+            .send({ ticketClass: 'premium' });
+
+        expect(response.status).toBe(200);
+        expect(response.body.booking.ticketClass)
+            .toBe('premium');
+
+        const booking = await getBookingById('API-TEST-002');
+
+        expect(booking.ticketClass).toBe('premium');
+    });
+
+    test('allows customers to update their own bookings', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-001')
+            .send({ ticketClass: 'premium' });
+
+        expect(response.status).toBe(200);
+
+        const booking = await getBookingById('API-TEST-001');
+
+        expect(booking.ticketClass).toBe('premium');
+    });
+
+    test('prevents customers from updating another booking', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-002')
+            .send({ ticketClass: 'premium' });
+
+        expect(response.status).toBe(404);
+
+        const booking = await getBookingById('API-TEST-002');
+
+        expect(booking.ticketClass).toBe('standard');
+    });
+
+    test('rejects invalid ticket classes', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-001')
+            .send({ ticketClass: 'invalid-class' });
+
+        expect(response.status).toBe(400);
+    });
+
+    test('rejects changes to protected fields', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(admin, true);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-001')
+            .send({ scheduleId: 999 });
+
+        expect(response.status).toBe(400);
+
+        const booking = await getBookingById('API-TEST-001');
+
+        expect(booking.scheduleId).toBe(1);
+    });
+
+    test('rejects an empty passenger list', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-001')
+            .send({ passengers: [] });
+
+        expect(response.status).toBe(400);
+    });
+
+    test('rejects an empty update request', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-001')
+            .send({});
+
+        expect(response.status).toBe(400);
+    });
+
+    test('allows customers to update passenger information', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-001')
+            .send({
+                passengers: [
+                    {
+                        firstName: 'Jane',
+                        lastName: 'Smith',
+                        email: customer.email,
+                        phone: '5550001234'
+                    }
+                ]
+            });
+
+        expect(response.status).toBe(200);
+
+        const booking = await getBookingById('API-TEST-001');
+
+        expect(booking.passengers[0].phone)
+            .toBe('5550001234');
+    });
+
+    test('prevents customers from removing their email association', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .patch('/api/bookings/API-TEST-001')
+            .send({
+                passengers: [
+                    {
+                        firstName: 'Someone',
+                        lastName: 'Else',
+                        email: 'someone@example.com',
+                        phone: '5551234567'
+                    }
+                ]
+            });
+
+        expect(response.status).toBe(400);
+
+        const booking = await getBookingById('API-TEST-001');
+
+        expect(booking.passengers[0].email)
+            .toBe(customer.email);
+    });
+
+    test('returns 404 for a nonexistent booking', async () => {
+        const agent = await authenticate(admin, true);
+
+        const response = await agent
+            .patch('/api/bookings/DOES-NOT-EXIST')
+            .send({ ticketClass: 'premium' });
+
+        expect(response.status).toBe(404);
+    });
 });
+
+
+/* =========================================
+ * Delete bookings
+ * ========================================= */
+
+describe('DELETE /api/bookings/:id', () => {
+    test('rejects unauthenticated requests', async () => {
+        await seedBookings();
+
+        const response = await request(app)
+            .delete('/api/bookings/API-TEST-001');
+
+        expect(response.status).toBe(401);
+    });
+
+    test('allows administrators to delete any booking', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(admin, true);
+
+        const response = await agent
+            .delete('/api/bookings/API-TEST-002');
+
+        expect(response.status).toBe(200);
+
+        expect(
+            await getBookingById('API-TEST-002')
+        ).toBeNull();
+    });
+
+    test('allows customers to delete their own bookings', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .delete('/api/bookings/API-TEST-001');
+
+        expect(response.status).toBe(200);
+
+        expect(
+            await getBookingById('API-TEST-001')
+        ).toBeNull();
+    });
+
+    test('prevents customers from deleting another booking', async () => {
+        await seedBookings();
+
+        const agent = await authenticate(customer);
+
+        const response = await agent
+            .delete('/api/bookings/API-TEST-002');
+
+        expect(response.status).toBe(404);
+
+        expect(
+            await getBookingById('API-TEST-002')
+        ).not.toBeNull();
+    });
+
+    test('returns 404 for a nonexistent booking', async () => {
+        const agent = await authenticate(admin, true);
+
+        const response = await agent
+            .delete('/api/bookings/DOES-NOT-EXIST');
+
+        expect(response.status).toBe(404);
+    });
 });

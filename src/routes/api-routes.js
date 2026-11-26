@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import { getAllTrains, getTrainById } from '../controllers/trains.js';
-import { getAllBookingsHandler } from '../controllers/bookings.js';
-import { requireBookingAdmin } from '../middleware/requireBookingAdmin.js';
+import {
+    getAllBookingsHandler,
+    updateBookingHandler,
+    deleteBookingHandler
+} from '../controllers/bookings.js';
 import { getCurrentUser } from '../controllers/auth.js';
 import { requireApiLogin } from '../middleware/auth.js';
 /**
@@ -123,11 +126,15 @@ router.get('/api/auth/me', requireApiLogin, getCurrentUser);
  * @openapi
  * /api/bookings:
  *   get:
- *     summary: Retrieve all bookings
- *     description: Returns booking records for authorized administrators.
+ *     summary: Retrieve authorized bookings
+ *     description: >
+ *       Administrators can retrieve all bookings.
+ *       Customers can only retrieve bookings containing
+ *       their authenticated email in the passenger list.
+ *       Sign in at /login before accessing this endpoint.
  *     tags: [Bookings]
  *     security:
- *       - AdminApiKey: []
+ *       - SessionCookie: []
  *     responses:
  *       200:
  *         description: Bookings retrieved successfully.
@@ -141,17 +148,152 @@ router.get('/api/auth/me', requireApiLogin, getCurrentUser);
  *                   items:
  *                     type: object
  *       401:
- *         description: Admin API key is missing.
- *       403:
- *         description: Admin API key is invalid.
+ *         description: Authentication required.
  *       500:
  *         description: Server error while retrieving bookings.
- *       503:
- *         description: Admin API access is not configured.
  */
-router.get('/api/bookings', requireBookingAdmin, getAllBookingsHandler);
+router.get('/api/bookings', requireApiLogin, getAllBookingsHandler);
 
+/**
+ * @openapi
+ * /api/bookings/{id}:
+ *   patch:
+ *     summary: Update a booking
+ *     description: >
+ *       Administrators can update any booking.
+ *       Customers can only update bookings associated
+ *       with their authenticated email.
+ *       Only ticket class, selected day, and passenger
+ *       information can be modified.
+ *     tags: [Bookings]
+ *     security:
+ *       - SessionCookie: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Booking confirmation ID.
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             minProperties: 1
+ *             additionalProperties: false
+ *             properties:
+ *               ticketClass:
+ *                 type: string
+ *                 enum: [standard, premium, first]
+ *               selectedDay:
+ *                 type: string
+ *                 enum:
+ *                   - monday
+ *                   - tuesday
+ *                   - wednesday
+ *                   - thursday
+ *                   - friday
+ *                   - saturday
+ *                   - sunday
+ *               passengers:
+ *                 type: array
+ *                 minItems: 1
+ *                 maxItems: 8
+ *                 items:
+ *                   type: object
+ *                   required:
+ *                     - firstName
+ *                     - lastName
+ *                     - email
+ *                     - phone
+ *                   properties:
+ *                     firstName:
+ *                       type: string
+ *                     lastName:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *           example:
+ *             ticketClass: premium
+ *             selectedDay: monday
+ *     responses:
+ *       200:
+ *         description: Booking updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 booking:
+ *                   type: object
+ *       400:
+ *         description: Invalid update fields or booking data.
+ *       401:
+ *         description: Authentication required.
+ *       403:
+ *         description: User is not authorized.
+ *       404:
+ *         description: Booking not found or inaccessible.
+ *       500:
+ *         description: Server error while updating the booking.
+ */
+router.patch(
+    '/api/bookings/:id',
+    requireApiLogin,
+    updateBookingHandler
+);
 
+/**
+ * @openapi
+ * /api/bookings/{id}:
+ *   delete:
+ *     summary: Delete a booking
+ *     description: >
+ *       Administrators can delete any booking.
+ *       Customers can only delete bookings containing
+ *       their authenticated email in the passenger list.
+ *     tags: [Bookings]
+ *     security:
+ *       - SessionCookie: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         description: Booking confirmation ID.
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Booking deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *             example:
+ *               message: Booking deleted successfully
+ *       401:
+ *         description: Authentication required.
+ *       403:
+ *         description: User is not authorized.
+ *       404:
+ *         description: Booking not found or inaccessible.
+ *       500:
+ *         description: Server error while deleting the booking.
+ */
+router.delete(
+    '/api/bookings/:id',
+    requireApiLogin,
+    deleteBookingHandler
+);
 /* =========================================================================
  * Feature Set 4: Ticket Classes
  * /api/ticket-classes, /api/ticket-classes?day={day}

@@ -15,7 +15,10 @@ import {
     processAdminLogout
 } from '../controllers/adminAuth.js';
 
-import { requireAdminPage } from '../middleware/requireAdminPage.js';
+import {
+    requirePageRole,
+    requirePageLogin
+} from '../middleware/auth.js';
 import {
     registerPage,
     register,
@@ -24,7 +27,7 @@ import {
     logout,
     adminDashboardPage
 } from '../controllers/auth.js';
-import { requirePageRole } from '../middleware/auth.js';
+import { requireAdminPage } from '../middleware/requireAdminPage.js'
 import { ROLE_NAMES } from '../models/schemas/roles.js';
 
 /**
@@ -82,8 +85,8 @@ router.post('/admin/login', processAdminLogin);
 // Administrator logout
 router.post('/admin/logout', requireAdminPage, processAdminLogout);
 
-// Protected bookings administration dashboard
-router.get('/bookings-admin', requireAdminPage, bookingsAdminPage);
+// Protected booking page accessible to authenticated customers and admins.
+router.get('/bookings-admin', requirePageLogin, bookingsAdminPage);
 
 // Display the booking form for a selected schedule.
 router.get('/trips/booking/:scheduleId', bookingPage);
