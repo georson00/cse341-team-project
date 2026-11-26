@@ -3,6 +3,8 @@ import { closeDb, connectToDb, getDb } from '../src/db/connect.js';
 import { initializeDatabase } from '../src/db/initialize.js';
 
 const connectionString = inject('MONGODB_TEST_URI');
+// Use a dummy API key for automated tests only.
+process.env.ADMIN_API_KEY = 'kizuna-test-admin-key';
 
 beforeAll(async () => {
   await connectToDb({

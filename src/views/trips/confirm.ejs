@@ -8,9 +8,7 @@
             </svg>
         </div>
         <h1 class="confirmation-title"><%= title %></h1>
-        <p class="confirmation-message">Your scenic railway journey has been confirmed. We've sent the details to your email.</p>
-        
-        <div class="booking-reference">
+<p class="confirmation-message">Your scenic railway journey has been confirmed. Please save your booking reference for future use.</p>        <div class="booking-reference">
             <span class="reference-label">Booking Reference</span>
             <span class="reference-number"><%= confirmation.id %></span>
         </div>
@@ -90,8 +88,8 @@
                 <div class="step-item">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <h3 class="step-title">Check Your Email</h3>
-                        <p class="step-description">A confirmation email with your booking details and QR code has been sent to <%= confirmation.passengers[0].email %></p>
+                        <h3 class="step-title">Save Your Booking Reference</h3>
+<p class="step-description">Keep your booking reference in a safe place. You can also print this confirmation page for your records.</p>
                     </div>
                 </div>
 
@@ -107,8 +105,7 @@
                     <div class="step-number">3</div>
                     <div class="step-content">
                         <h3 class="step-title">Present Your Booking</h3>
-                        <p class="step-description">Show your booking reference or QR code at the boarding gate</p>
-                    </div>
+<p class="step-description">Keep your booking reference available when checking in for your journey.</p>                    </div>
                 </div>
 
                 <div class="step-item">

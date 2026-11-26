@@ -1,15 +1,18 @@
 import mongoose from 'mongoose';
 
 const tripSchema = new mongoose.Schema({
-  trainNumber: { type: String, required: true },
-  origin: { type: String, required: true },
-  destination: { type: String, required: true },
-  departureTime: { type: Date, required: true },
-  arrivalTime: { type: Date, required: true },
-  price: { type: Number, required: true },
-  availableSeats: { type: Number, required: true }
-}, {
-  timestamps: true
-});
+  id: { type: String, index: true },
+  name: { type: String, required: true, trim: true },
+  description: { type: String, default: '' },
+  region: String,
+  startStation: String,
+  endStation: String,
+  duration: String,
+  distance: Number,
+  highlights: [String],
+  bestSeason: String,
+  operatingMonths: [Number],
+  imageUrl: String,
+}, { collection: 'trips' });
 
 export default mongoose.model('Trip', tripSchema);

@@ -1,9 +1,12 @@
+import { randomBytes } from 'node:crypto';
+
 /**
- * Generates a unique Japan Rail like confirmation code for bookings.
- * @returns {string} A unique confirmation code.
+ * Generates a random booking confirmation code.
+ * Uniqueness is enforced by the database.
+ * @returns {string} A booking confirmation code.
  */
 const generateConfirmationCode = () => {
-    return 'JR' + Math.random().toString(36).substring(2, 10).toUpperCase();
+    return 'JR' + randomBytes(6).toString('hex').toUpperCase();
 };
 
 /**
