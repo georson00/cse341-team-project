@@ -147,3 +147,17 @@ export async function deleteTripAdmin(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 }
+
+export async function listStationOptionsAdmin(req, res) {
+  try {
+    const stations = await mongoose.connection
+      .collection('stations')
+      .find({}, { projection: { _id: 0, id: 1, name: 1 } })
+      .sort({ name: 1 })
+      .toArray();
+    return res.status(200).json(stations);
+  } catch (err) {
+    console.error('Error listing stations for admin:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+}

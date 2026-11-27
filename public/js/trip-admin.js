@@ -6,6 +6,27 @@ const editTpl = document.querySelector('#trip-edit-template');
 
 let tripsById = new Map();
 
+let stations = [];
+
+async function loadStations() {
+  try {
+    const res = await fetch('/api/trips/stations');
+    if (res.ok) {
+      stations = await res.json();
+    }
+  } catch {
+    stations = [];
+  }
+}
+
+function fillStationSelect(select, selectedId) {
+  select.replaceChildren(new Option('Select station', ''));
+  for (const station of stations) {
+    select.append(new Option(station.name, station.id));
+  }
+  select.value = selectedId || '';
+}
+
 function renderTrips() {
   const fragment = document.createDocumentFragment();
 
@@ -112,8 +133,8 @@ container?.addEventListener('click', async (event) => {
     form.dataset.tripId = tripId;
 
     form.elements.name.value = trip.name || '';
-    form.elements.startStation.value = trip.startStation || '';
-    form.elements.endStation.value = trip.endStation || '';
+    fillStationSelect(form.elements.startStation, trip.startStation);
+    fillStationSelect(form.elements.endStation, trip.endStation);
     form.elements.duration.value = trip.duration || '';
     form.elements.description.value = trip.description || '';
     form.elements.highlights.value = Array.isArray(trip.highlights)
@@ -168,4 +189,7 @@ container?.addEventListener('click', async (event) => {
   }
 });
 
+await loadStations();
+fillStationSelect(createForm.elements.startStation, '');
+fillStationSelect(createForm.elements.endStation, '');
 loadTrips();
