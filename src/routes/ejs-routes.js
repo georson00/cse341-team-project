@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { homePage, aboutPage, testErrorPage } from './index.js';
 import { trainsPage } from '../controllers/trains.js';
-import railTripsRouter from './trips.js';
+import { tripsListPage, tripDetailsPage } from '../controllers/trips.js';
 import {
   bookingPage,
   processBookingRequest,
@@ -30,9 +30,7 @@ import { ROLE_NAMES } from '../models/schemas/roles.js';
 /**
  * Routes that render EJS pages.
  *
- * The /trips routes still use the legacy files in src/routes (trips.js,
- * list.js, details.js, book.js, confirm.js). Feature Sets 1 and 3 move those
- * into controllers and register the routes in their sections below.
+ * Each feature set registers its page routes in its own section below.
  */
 import { tripAdminEjsRouter } from './trip-admin.js';
 
@@ -72,6 +70,13 @@ router.get('/admin/dashboard', requirePageRole(ROLE_NAMES.ADMIN), adminDashboard
  * Feature Set 1: Trips (trip list and trip details pages)
  * ========================================================================= */
 
+// Trip list page (content is loaded client-side from /api/trips)
+router.get('/trips', tripsListPage);
+
+// Trip details page. Only matches one path segment, so it does not catch
+// the legacy /trips/booking/... and /trips/confirmation/... routes.
+router.get('/trips/:tripId', tripDetailsPage);
+
 /* =========================================================================
  * Feature Set 3: Bookings (booking page, confirmation, /bookings-admin)
  * ========================================================================= */
@@ -93,8 +98,5 @@ router.post('/trips/book', processBookingRequest);
 
 // Display the booking confirmation.
 router.get('/trips/confirmation/:confirmationId', confirmationPage);
-
-// Legacy trip routes: remove each one as it is moved into the sections above.
-router.use('/trips', railTripsRouter);
 
 export default router;

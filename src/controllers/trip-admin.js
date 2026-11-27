@@ -37,16 +37,6 @@ export function renderTripAdminPage(req, res) {
   });
 }
 
-export async function listTripsAdmin(req, res) {
-  try {
-    const trips = await Trip.find({}).sort({ name: 1 }).lean();
-    return res.status(200).json(trips);
-  } catch (err) {
-    console.error('Error listing trips for admin:', err);
-    return res.status(500).json({ message: 'Internal server error' });
-  }
-}
-
 export async function createTripAdmin(req, res) {
   try {
     const name = typeof req.body.name === 'string' ? req.body.name.trim() : '';

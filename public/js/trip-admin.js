@@ -62,7 +62,8 @@ async function loadTrips() {
       return;
     }
 
-    const trips = await res.json();
+    // GET /api/trips returns { trips: [...] } (shared public endpoint).
+    const { trips } = await res.json();
     tripsById = new Map(trips.map((t) => [t._id, t]));
     renderTrips();
   } catch {
