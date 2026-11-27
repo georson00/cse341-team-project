@@ -1,5 +1,6 @@
 //src/models/trips.js
-import trip from "./schemas/trips.js";
+// Uses the single "Trip" model shared with the trip admin page (Feature Set 5).
+import trip from "./trip.js";
 
 // Returns one trip by its string ID (e.g. "alpine-panorama"), or null.
 export async function getTripById(id) {

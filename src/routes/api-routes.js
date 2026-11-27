@@ -3,6 +3,8 @@ import { getAllTrains, getTrainById } from '../controllers/trains.js';
 import { getAllTrips, getTripById } from '../controllers/trips.js';
 import { getAllBookingsHandler } from '../controllers/bookings.js';
 import { requireBookingAdmin } from '../middleware/requireBookingAdmin.js';
+import { getCurrentUser } from '../controllers/auth.js';
+import { requireApiLogin } from '../middleware/auth.js';
 
 /**
  * Routes that expose JSON API endpoints.
@@ -11,7 +13,11 @@ import { requireBookingAdmin } from '../middleware/requireBookingAdmin.js';
  * Swagger docs at /api-docs. Add your routes inside your feature set's
  * section below to avoid merge conflicts with teammates.
  */
+import { tripAdminApiRouter } from './trip-admin.js';
+
 const router = Router();
+
+router.use(tripAdminApiRouter);
 
 /* =========================================================================
  * Trains (example)
@@ -62,6 +68,43 @@ router.get('/api/trains', getAllTrains);
  *         description: Server error while fetching the train.
  */
 router.get('/api/trains/:id', getTrainById);
+
+/* =========================================================================
+ * W04 Feature Set 1: Core Authentication
+ * Protected API routes use requireApiLogin() or requireApiRole(role) from
+ * src/middleware/auth.js and document the 401/403 responses below.
+ * ========================================================================= */
+
+/**
+ * @openapi
+ * /api/auth/me:
+ *   get:
+ *     summary: Get the signed-in user
+ *     description: >
+ *       Returns the user stored in the session. Sign in at /login first; the
+ *       browser then sends the kizuna.sid session cookie automatically.
+ *     tags: [Authentication]
+ *     security:
+ *       - SessionCookie: []
+ *     responses:
+ *       200:
+ *         description: The signed-in user.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/SessionUser'
+ *       401:
+ *         description: Not signed in.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AuthError'
+ *             example: { message: Authentication required }
+ */
+router.get('/api/auth/me', requireApiLogin, getCurrentUser);
 
 /* =========================================================================
  * Feature Set 1: Trips

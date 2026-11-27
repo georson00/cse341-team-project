@@ -60,3 +60,24 @@ describe('Trip pages', () => {
     expect(response.status).toBe(404);
   });
 });
+
+describe('Trip admin API stays protected', () => {
+  test('the public list works signed out, but changes require an admin', async () => {
+    const list = await request(app).get('/api/trips');
+    const create = await request(app).post('/api/trips').send({ name: 'Test Trip' });
+    const update = await request(app).put('/api/trips/665f1c2e9b1e8a0012345678').send({ name: 'x' });
+    const remove = await request(app).delete('/api/trips/665f1c2e9b1e8a0012345678');
+
+    expect(list.status).toBe(200);
+    expect(create.status).toBe(401);
+    expect(update.status).toBe(401);
+    expect(remove.status).toBe(401);
+  });
+
+  test('the trip admin page redirects signed-out visitors to login', async () => {
+    const response = await request(app).get('/admin/trips');
+
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/login');
+  });
+});

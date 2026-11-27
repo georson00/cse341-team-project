@@ -23,6 +23,30 @@ definition: {
         in: 'header',
         name: 'x-admin-api-key',
         description: 'Admin API key required to access booking records.'
+      },
+      SessionCookie: {
+        type: 'apiKey',
+        in: 'cookie',
+        name: 'kizuna.sid',
+        description: 'Session cookie set after signing in at /login.'
+      }
+    },
+    schemas: {
+      SessionUser: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: '665f1c2e9b1e8a0012345678' },
+          displayName: { type: 'string', example: 'Jane Smith' },
+          username: { type: 'string', example: 'jsmith' },
+          email: { type: 'string', example: 'jane@example.com' },
+          role: { type: 'string', enum: ['customer', 'admin'] }
+        }
+      },
+      AuthError: {
+        type: 'object',
+        properties: {
+          message: { type: 'string', example: 'Authentication required' }
+        }
       }
     }
   }
