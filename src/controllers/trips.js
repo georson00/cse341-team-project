@@ -1,9 +1,14 @@
 //src/controllers/trips.js
 import {
   getTripById as findTripById,
-  getAllTrips as findAllTrips,
+  getTripsPage,
 } from "../models/trips.js";
 import { getDb } from "../db/connect.js";
+import {
+  buildPagination,
+  pageOffset,
+  parsePagination,
+} from "../utils/pagination.js";
 
 /* =========================================================================
  * API controllers (JSON responses)
@@ -32,13 +37,29 @@ export async function getTripById(req, res) {
   }
 }
 
-// GET /api/trips
+// GET /api/trips?page=1&limit=10
 export async function getAllTrips(req, res) {
-  try {
-    const trips = await findAllTrips();
+  const { page, limit, errors } = parsePagination(req.query);
 
-    // Same { key: [...] } shape as /api/trains.
-    return res.status(200).json({ trips });
+  if (errors.length > 0) {
+    return res.status(400).json({
+      error: "Invalid query parameters",
+      details: errors,
+    });
+  }
+
+  try {
+    const { trips, totalItems } = await getTripsPage({
+      skip: pageOffset(page, limit),
+      limit,
+    });
+
+    // "trips" keeps the same key as before, so existing clients still work;
+    // "pagination" tells the client where it is in the full result set.
+    return res.status(200).json({
+      trips,
+      pagination: buildPagination({ page, limit, totalItems }),
+    });
   } catch (error) {
     console.error("Error fetching trips:", error);
 
