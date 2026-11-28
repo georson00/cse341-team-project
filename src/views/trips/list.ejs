@@ -3,15 +3,26 @@
 
 <%# Trips and filter options are loaded client-side from /api/trips (see hookTripsList in public/js/main.js). %>
 <div id="filters">
-    Search by Region:
-    <select id="region-filter">
-        <option value="all">All Regions</option>
-    </select>
+    <label>
+        Search by Region:
+        <select id="region-filter">
+            <option value="all">All Regions</option>
+        </select>
+    </label>
 
-    Search by Season:
-    <select id="season-filter">
-        <option value="all">Any Season</option>
-    </select>
+    <label>
+        Search by Season:
+        <select id="season-filter">
+            <option value="all">Any Season</option>
+        </select>
+    </label>
+
+    <form id="trip-search" role="search">
+        <label for="trip-keyword">Keyword:</label>
+        <input type="search" id="trip-keyword" name="q" maxlength="100"
+            placeholder="Trip name or description">
+        <button type="submit">Search</button>
+    </form>
 </div>
 
 <div class="trips-state" id="trips-loading">Loading trips...</div>
