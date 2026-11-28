@@ -136,21 +136,51 @@ router.get('/api/auth/me', requireApiLogin, getCurrentUser);
  *           type: array
  *           items: { type: integer, minimum: 1, maximum: 12 }
  *         imageUrl: { type: string, example: /images/routes/alpine-panorama.png }
+ *     Pagination:
+ *       type: object
+ *       description: Where this response sits in the full result set.
+ *       properties:
+ *         page: { type: integer, example: 1 }
+ *         limit: { type: integer, example: 10 }
+ *         totalItems: { type: integer, example: 6 }
+ *         totalPages: { type: integer, example: 1 }
+ *         hasNextPage: { type: boolean, example: false }
+ *         hasPrevPage: { type: boolean, example: false }
  *     Error:
  *       type: object
  *       properties:
  *         error: { type: string }
+ *     QueryError:
+ *       type: object
+ *       properties:
+ *         error: { type: string, example: Invalid query parameters }
+ *         details:
+ *           type: array
+ *           items: { type: string }
+ *           example: [limit must be an integer between 1 and 50]
  */
 
 /**
  * @openapi
  * /api/trips:
  *   get:
- *     summary: Get all trips
+ *     summary: Get a page of trips
+ *     description: >
+ *       Returns trips sorted by name, `limit` at a time. Asking for a page past
+ *       the end returns an empty `trips` array with the real pagination metadata.
  *     tags: [Trips]
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema: { type: integer, minimum: 1, default: 1 }
+ *         description: Page number, starting at 1.
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, minimum: 1, maximum: 50, default: 10 }
+ *         description: Number of trips per page.
  *     responses:
  *       200:
- *         description: An object containing the list of trips, sorted by name.
+ *         description: One page of trips plus pagination metadata.
  *         content:
  *           application/json:
  *             schema:
@@ -160,6 +190,17 @@ router.get('/api/auth/me', requireApiLogin, getCurrentUser);
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Trip'
+ *                 pagination:
+ *                   $ref: '#/components/schemas/Pagination'
+ *       400:
+ *         description: "`page` or `limit` is not a valid integer, or is out of range."
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/QueryError'
+ *             example:
+ *               error: Invalid query parameters
+ *               details: [page must be an integer of at least 1, limit must be an integer between 1 and 50]
  *       500:
  *         description: Server error while fetching trips.
  *         content:

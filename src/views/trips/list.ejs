@@ -17,7 +17,16 @@
 <div class="trips-state" id="trips-loading">Loading trips...</div>
 <div class="trips-state trips-error" id="trips-error" hidden></div>
 
+<p class="trips-state" id="trips-summary" aria-live="polite"></p>
+
 <div class="routes-grid" id="trips-list"></div>
+
+<%# Previous / Next step through /api/trips 10 trips at a time. %>
+<nav class="trips-pagination" id="trips-pagination" aria-label="Trip pages" hidden>
+    <button type="button" class="page-btn" id="trips-prev">&#8592; Previous</button>
+    <span class="page-status" id="trips-page-status"></span>
+    <button type="button" class="page-btn" id="trips-next">Next &#8594;</button>
+</nav>
 
 <template id="trip-card-template">
     <div class="route-card">
