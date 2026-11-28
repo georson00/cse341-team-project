@@ -164,12 +164,30 @@ router.get('/api/auth/me', requireApiLogin, getCurrentUser);
  * @openapi
  * /api/trips:
  *   get:
- *     summary: Get a page of trips
+ *     summary: Get a page of trips, optionally filtered and searched
  *     description: >
- *       Returns trips sorted by name, `limit` at a time. Asking for a page past
- *       the end returns an empty `trips` array with the real pagination metadata.
+ *       Returns trips sorted by name, `limit` at a time. `region`, `season` and `q`
+ *       are combined with AND and applied before paging, so `pagination.totalItems`
+ *       counts only the matching trips. Asking for a page past the end returns an
+ *       empty `trips` array with the real pagination metadata.
  *     tags: [Trips]
  *     parameters:
+ *       - in: query
+ *         name: region
+ *         schema: { type: string, pattern: '^[a-z0-9-]{1,40}$' }
+ *         example: kansai
+ *         description: Only trips in this region (case-insensitive).
+ *       - in: query
+ *         name: season
+ *         schema:
+ *           type: string
+ *           enum: [spring, summer, autumn, winter]
+ *         description: Only trips whose best season matches.
+ *       - in: query
+ *         name: q
+ *         schema: { type: string, maxLength: 100 }
+ *         example: gorge
+ *         description: Keyword matched anywhere in the trip name or description (case-insensitive, plain text).
  *       - in: query
  *         name: page
  *         schema: { type: integer, minimum: 1, default: 1 }
@@ -192,15 +210,34 @@ router.get('/api/auth/me', requireApiLogin, getCurrentUser);
  *                     $ref: '#/components/schemas/Trip'
  *                 pagination:
  *                   $ref: '#/components/schemas/Pagination'
+ *                 filters:
+ *                   type: object
+ *                   description: The filters that were applied (null when not used).
+ *                   properties:
+ *                     region: { type: string, nullable: true, example: kansai }
+ *                     season: { type: string, nullable: true, example: null }
+ *                     q: { type: string, nullable: true, example: gorge }
+ *                 filterOptions:
+ *                   type: object
+ *                   description: Every value the region and season filters accept, taken from the whole collection.
+ *                   properties:
+ *                     regions:
+ *                       type: array
+ *                       items: { type: string }
+ *                       example: [central, hokkaido, kansai, northern]
+ *                     seasons:
+ *                       type: array
+ *                       items: { type: string }
+ *                       example: [spring, summer, autumn, winter]
  *       400:
- *         description: "`page` or `limit` is not a valid integer, or is out of range."
+ *         description: "`page`/`limit` is not a valid integer or is out of range, `season` is not a known season, `region` has invalid characters, `q` is too long, or a parameter was repeated."
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/QueryError'
  *             example:
  *               error: Invalid query parameters
- *               details: [page must be an integer of at least 1, limit must be an integer between 1 and 50]
+ *               details: [page must be an integer of at least 1, 'season must be one of: spring, summer, autumn, winter']
  *       500:
  *         description: Server error while fetching trips.
  *         content:

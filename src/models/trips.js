@@ -6,6 +6,33 @@ import trip from "./trip.js";
 // with the same name never move between pages.
 const TRIP_SORT = { name: 1, _id: 1 };
 
+// Seasons in calendar order (also the values allowed for bestSeason).
+export const TRIP_SEASONS = ["spring", "summer", "autumn", "winter"];
+
+// Escapes regex special characters so a keyword is matched as plain text
+// ("a.b" only matches "a.b", and ".*" does not match everything).
+function escapeRegex(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Turns validated filters into a MongoDB query. Empty filters are skipped.
+export function buildTripFilter({ region, season, q } = {}) {
+  const filter = {};
+
+  if (region) {
+    filter.region = region;
+  }
+  if (season) {
+    filter.bestSeason = season;
+  }
+  if (q) {
+    const keyword = new RegExp(escapeRegex(q), "i");
+    filter.$or = [{ name: keyword }, { description: keyword }];
+  }
+
+  return filter;
+}
+
 // Returns one trip by its string ID (e.g. "alpine-panorama"), or null.
 export async function getTripById(id) {
   return trip.findOne({ id }).lean();
@@ -19,4 +46,10 @@ export async function getTripsPage({ filter = {}, skip = 0, limit = 10 } = {}) {
   ]);
 
   return { trips, totalItems };
+}
+
+// Every region in the collection (not just the current page), for the dropdown.
+export async function getTripRegions() {
+  const regions = await trip.distinct("region");
+  return regions.filter(Boolean).sort();
 }

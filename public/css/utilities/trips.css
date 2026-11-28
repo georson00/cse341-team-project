@@ -348,3 +348,36 @@
         color: var(--clr-text-secondary);
     }
 }
+
+/* Region / season dropdowns and keyword search above the trip list */
+#filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+
+    #trip-search {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-xs);
+    }
+
+    input[type="search"] {
+        min-width: 16rem;
+        padding: var(--space-xxs) var(--space-xs);
+        border: 1px solid var(--clr-border);
+        border-radius: var(--radius-sm);
+        font: inherit;
+    }
+
+    button {
+        padding: var(--space-xxs) var(--space-md);
+        border: 1px solid var(--clr-border);
+        border-radius: var(--radius-sm);
+        background: var(--clr-surface);
+        font: inherit;
+        cursor: pointer;
+    }
+}
